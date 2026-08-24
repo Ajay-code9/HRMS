@@ -1,7 +1,7 @@
 import { UserAccount } from '@/data/authData';
 import { Company, Employee, AttendanceRecord, PayrollRecord, LeaveRequest } from '@/types/hrms';
 
-const API_BASE_URL = 'http://localhost:5000/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
 export const api = {
   // Auth API
