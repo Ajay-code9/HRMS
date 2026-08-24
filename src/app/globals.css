@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+/* ─── Facebook Blue Design System ───────────────────────────────────────────── */
+:root {
+  /* Primary — Facebook Blue */
+  --primary:        #1877F2;
+  --primary-dark:   #0B5CD4;
+  --primary-darker: #0847A8;
+  --primary-light:  #E7F0FD;
+  --primary-mid:    #5B9CF6;
+
+  /* Sidebar */
+  --sidebar-bg:      #0D1929;
+  --sidebar-hover:   #162236;
+  --sidebar-border:  #1E3048;
+  --sidebar-active:  #1877F2;
+
+  /* Neutrals */
+  --background: #F0F2F5;   /* Facebook's page bg */
+  --surface:    #FFFFFF;
+  --border:     #DCE0E5;
+  --foreground: #1C1E21;   /* Facebook's text color */
+  --muted:      #65676B;   /* Facebook's secondary text */
+}
+
+/* ─── Base Typography ───────────────────────────────────────────────────────── */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ─── Universal Flex Overflow Fix ───────────────────────────────────────────── */
+/* Prevents modals, drawers, panels from cutting off content at bottom.         */
+/* Any flex-col container marked .flex-modal will properly scroll its children. */
+.flex-modal {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+.flex-modal > .flex-scroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;        /* THE critical rule — flex items default min-height:auto */
+}
+.flex-modal > .flex-fixed {
+  flex-shrink: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", var(--font-inter), sans-serif;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--foreground);
+}
+
+/* ─── Primary Button Utilities ──────────────────────────────────────────────── */
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: var(--primary-dark); }
+
+.btn-ghost {
+  background: var(--surface);
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-ghost:hover { background: var(--primary-light); }
+
+/* ─── Input base ────────────────────────────────────────────────────────────── */
+.input-base {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  font-size: 13px;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+}
+.input-base:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.12);
+}
+
+/* ─── Card base ─────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+/* ─── Status badges ─────────────────────────────────────────────────────────── */
+.badge-green  { background:#E6F4EA; color:#1D7341; border:1px solid #A8D5B5; }
+.badge-red    { background:#FDE8E8; color:#B91C1C; border:1px solid #F5A9A9; }
+.badge-blue   { background:var(--primary-light); color:var(--primary-dark); border:1px solid #B0CFF9; }
+.badge-amber  { background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; }
+.badge-slate  { background:#F1F3F5; color:#475569; border:1px solid #CBD5E1; }
+
+/* ─── Sharp edges (client preference) ──────────────────────────────────────── */
+* { border-radius: 0px !important; }
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: var(--background); }
+::-webkit-scrollbar-thumb  { background: #BCC0C4; }
+::-webkit-scrollbar-thumb:hover { background: #8D949E; }
+
+/* ─── Table ─────────────────────────────────────────────────────────────────── */
+table { border-collapse: collapse; width: 100%; }
+thead th {
+  background: #F7F8FA;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  vertical-align: middle;
+}
+tbody tr:hover { background: var(--primary-light); }
+tbody tr:last-child td { border-bottom: none; }
+
+/* ─── Monospace for statutory numbers ──────────────────────────────────────── */
+.mono { font-family: "JetBrains Mono","Fira Code","Cascadia Code",monospace; letter-spacing: 0.04em; }

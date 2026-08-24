@@ -1,0 +1,375 @@
+// Production PostgreSQL Prisma Schema - Mapped 100% to Client's Exact Laravel Database Migrations
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  COMPANY_OWNER
+  COMPANY_HR
+  CONSULTANT
+  EMPLOYEE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum MaritalStatus {
+  MARRIED
+  UNMARRIED
+}
+
+// Client Specified PF Type Combo: NPF, LPF, HPF, PPF, HPN
+enum PFType {
+  NPF // Not Applicable
+  LPF // Limited Salary PF (15,000 Cap)
+  HPF // Higher Salary PF (Actual Salary)
+  PPF // Pensioner Limited Salary
+  HPN // Pensioner Higher Salary
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+  LEAVE
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum IndustryCategory {
+  REGULAR
+  SEASONAL
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role
+  companyName  String
+  avatar       String?
+  empId        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  permissions HRPermission?
+}
+
+model HRPermission {
+  id               String  @id @default(uuid())
+  userId           String  @unique
+  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  canAddEmployees  Boolean @default(true)
+  canViewSalary    Boolean @default(true)
+  canApproveLeaves Boolean @default(true)
+  canRunPayroll    Boolean @default(false)
+}
+
+// 2025_07_30_081205_create_companies_table & 2025_07_31_033513_create_company_offices_table
+model Company {
+  id            String           @id @default(uuid())
+  name          String
+  code          String           @unique
+  pfCode        String
+  esiCode       String
+  branchesCount Int              @default(1)
+  employeeCount Int              @default(0)
+  contactPerson String
+  phone         String
+  email         String
+  city          String
+  state         String
+  industry      String           @default("Information Technology")
+  industryType  IndustryCategory @default(REGULAR)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  offices            CompanyOffice[]
+  banks              CompanyBank[]
+  workers            Worker[]
+  individualSalary   IndividualSalaryStructure[]
+  compositeSalary    CompositeSalaryStructure[]
+  payFiles           PayFile[]
+}
+
+model CompanyOffice {
+  id               String   @id @default(uuid())
+  companyId        String
+  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  officeName       String
+  esiId            String?
+  esiApplicable    Boolean  @default(true)
+  lwfApplicable    Boolean  @default(true)
+  profTaxApplicable Boolean @default(true)
+  createdAt        DateTime @default(now())
+}
+
+model CompanyBank {
+  id            String   @id @default(uuid())
+  companyId     String
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  bankName      String
+  accountNumber String
+  ifscCode      String
+  branchName    String
+}
+
+// 2025_07_28_064920_create_workers_table & 2025_08_13_000001_create_employees_table
+model Worker {
+  id            Int           @id @default(autoincrement())
+  companyId     String
+  company       Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  workerCode    Int           @unique
+  workerName    String
+  fhName        String
+  fh            String        // Father or Husband
+  dob           DateTime
+  doj           DateTime
+  doe           DateTime?     // Date of Exit
+  gender        Gender        @default(MALE)
+  maritalStatus MaritalStatus @default(UNMARRIED)
+  adharNo       String?
+  pan           String
+  bankAccountNo String
+  ifscCode      String
+  mobile        String
+  email         String?       @unique
+  pfType        PFType        @default(LPF)
+  pfNo          String
+  uan           String
+  esiApplicable Boolean       @default(true)
+  esiNo         String
+  photo         String?
+  password      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  familyDetails  EmployeeFamilyDetail[]
+  addressDetails EmployeeAddressDetail[]
+  serviceDetails EmployeeServiceDetail[]
+  dailyAttendance DailyAttendance[]
+  monthlyAttendance MonthlyAttendance[]
+  payEarnings    PayEarning[]
+  payDeductions  PayDeduction[]
+  payPfDetails   PayPfDetail[]
+  payEsiDetails  PayEsiDetail[]
+  payOvertime    PayOvertime[]
+  loans          Loan[]
+}
+
+model EmployeeFamilyDetail {
+  id           String @id @default(uuid())
+  workerId     Int
+  worker       Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  memberName   String
+  relation     String
+  dob          DateTime?
+  dependent    Boolean @default(true)
+}
+
+model EmployeeAddressDetail {
+  id               String @id @default(uuid())
+  workerId         Int
+  worker           Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  presentAddress   String
+  permanentAddress String
+  city             String
+  state            String
+  pincode          String
+}
+
+model EmployeeServiceDetail {
+  id          String   @id @default(uuid())
+  workerId    Int
+  worker      Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  department  String
+  designation String
+  grade       String?
+  shift       String   @default("Day")
+}
+
+// Salary Factor Tables (2024_06_11_create_factornames_table & 2025_08_22_create_company_factors)
+model SalaryFactor {
+  id         Int      @id @default(autoincrement())
+  factorName String
+  type       String   @default("Earning") // Earning or Deduction
+}
+
+model IndividualSalaryStructure {
+  id          String   @id @default(uuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  workerCode  Int
+  basicSalary Float
+  hra         Float
+  conveyance  Float
+  special     Float
+  grossSalary Float
+}
+
+model CompositeSalaryStructure {
+  id          String  @id @default(uuid())
+  companyId   String
+  company     Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  gradeName   String
+  basicSalary Float
+  hra         Float
+  conveyance  Float
+  special     Float
+}
+
+// Attendance Tables (2025_10_11_create_daily_attendance & monthly_attendance)
+model DailyAttendance {
+  id            String           @id @default(uuid())
+  workerId      Int
+  worker        Worker           @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  date          String
+  inTime        String           @default("09:00 AM")
+  outTime       String           @default("06:00 PM")
+  status        AttendanceStatus @default(PRESENT)
+  overtimeHours Float            @default(0.0)
+  createdAt     DateTime         @default(now())
+}
+
+model MonthlyAttendance {
+  id          String @id @default(uuid())
+  workerId    Int
+  worker      Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  monthYear   String
+  totalDays   Int    @default(26)
+  presentDays Float
+  absentDays  Float
+  leaveDays   Float
+  otHours     Float  @default(0.0)
+}
+
+// Master Payroll Processing Tables (2025_10_11_create_payfile & pay_earnings/deductions/pf/esi/overtime)
+model PayFile {
+  id          String   @id @default(uuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  monthYear   String
+  processedAt DateTime @default(now())
+  totalWorkers Int
+  totalGross  Float
+  totalNet    Float
+  status      String   @default("Processed")
+
+  earnings   PayEarning[]
+  deductions PayDeduction[]
+  pfDetails  PayPfDetail[]
+  esiDetails PayEsiDetail[]
+  overtimes  PayOvertime[]
+}
+
+model PayEarning {
+  id               String  @id @default(uuid())
+  payFileId        String
+  payFile          PayFile @relation(fields: [payFileId], references: [id], onDelete: Cascade)
+  workerId         Int
+  worker           Worker  @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  basicEarned      Float
+  hraEarned        Float
+  conveyanceEarned Float
+  specialEarned    Float
+  grossEarned      Float
+}
+
+model PayDeduction {
+  id              String  @id @default(uuid())
+  payFileId       String
+  payFile         PayFile @relation(fields: [payFileId], references: [id], onDelete: Cascade)
+  workerId        Int
+  worker          Worker  @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  profTax         Float   @default(0.0)
+  lwf             Float   @default(0.0)
+  tds             Float   @default(0.0)
+  loanRecovery    Float   @default(0.0)
+  totalDeductions Float
+}
+
+model PayPfDetail {
+  id           String  @id @default(uuid())
+  payFileId    String
+  payFile      PayFile @relation(fields: [payFileId], references: [id], onDelete: Cascade)
+  workerId     Int
+  worker       Worker  @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  pfWages      Float
+  epfDeduction Float   // 12%
+  epsAmount    Float   // 8.33% Capped
+  eePfAmount   Float   // 3.67%
+}
+
+model PayEsiDetail {
+  id                String  @id @default(uuid())
+  payFileId         String
+  payFile           PayFile @relation(fields: [payFileId], references: [id], onDelete: Cascade)
+  workerId          Int
+  worker            Worker  @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  esiWages          Float
+  employeeEsiAmount Float   // 0.75%
+  employerEsiAmount Float   // 3.25%
+}
+
+model PayOvertime {
+  id          String  @id @default(uuid())
+  payFileId   String
+  payFile     PayFile @relation(fields: [payFileId], references: [id], onDelete: Cascade)
+  workerId    Int
+  worker      Worker  @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  otHours     Float
+  otRate      Float
+  otAmount    Float
+}
+
+model Loan {
+  id               String       @id @default(uuid())
+  workerId         Int
+  worker           Worker       @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  loanType         String
+  loanAmount       Float
+  monthlyDeduction Float
+  balanceAmount    Float
+  status           String       @default("Active")
+  returns          LoanReturn[]
+}
+
+model LoanReturn {
+  id             String   @id @default(uuid())
+  loanId         String
+  loan           Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  paidAmount     Float
+  paidDate       String
+  paymentMode    String   @default("Salary Deduction")
+}
+
+model StateMaster {
+  id     Int          @id
+  name   String
+  code   String
+  cities CityMaster[]
+}
+
+model CityMaster {
+  id      Int         @id
+  stateId Int
+  state   StateMaster @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  name    String
+}
