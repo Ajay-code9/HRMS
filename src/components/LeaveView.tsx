@@ -195,7 +195,7 @@ export const LeaveView: React.FC<LeaveProps> = ({
                 <label className="text-slate-700 font-bold block mb-1">Leave Type *</label>
                 <select
                   value={leaveType}
-                  onChange={(e: any) => setLeaveType(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setLeaveType(e.target.value as 'Casual' | 'Sick' | 'Earned')}
                   className="w-full bg-slate-50 border border-slate-300 px-3 py-2 text-slate-900 font-bold"
                 >
                   <option value="Casual">Casual Leave</option>

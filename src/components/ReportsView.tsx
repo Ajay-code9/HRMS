@@ -81,7 +81,7 @@ export const ReportsView: React.FC<ReportsProps> = ({ employees, companies }) =>
     const net = gross - (pf + esi);
 
     autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 10,
+      startY: (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10,
       head: [['EARNINGS', 'AMOUNT (Rs.)', 'DEDUCTIONS', 'AMOUNT (Rs.)']],
       body: [
         ['Basic Salary', selectedEmp.basicSalary.toLocaleString('en-IN'), 'EPF Employee (12%)', pf.toLocaleString('en-IN')],
@@ -94,7 +94,7 @@ export const ReportsView: React.FC<ReportsProps> = ({ employees, companies }) =>
       theme: 'grid'
     });
 
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
     doc.setFillColor(30, 64, 175);
     doc.rect(14, finalY, 182, 14, 'F');
     doc.setTextColor(255, 255, 255);
