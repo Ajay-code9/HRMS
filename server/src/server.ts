@@ -192,17 +192,30 @@ app.post('/api/v1/companies', async (req: Request, res: Response) => {
     id: req.body.id || `comp-${Date.now()}`,
     name: req.body.name,
     code: req.body.code || `CMP-${Math.floor(100 + Math.random() * 900)}`,
+    companyType: req.body.companyType || 'Private Limited (Pvt Ltd)',
+    cinNumber: req.body.cinNumber || '',
+    gstin: req.body.gstin || '',
+    panNumber: req.body.panNumber || '',
+    tanNumber: req.body.tanNumber || '',
     pfCode: req.body.pfCode || 'CHD/12345',
     esiCode: req.body.esiCode || '1234567890',
+    lwfCode: req.body.lwfCode || '',
+    ptCode: req.body.ptCode || '',
+    registeredAddress: req.body.registeredAddress || '',
+    pincode: req.body.pincode || '',
     branchesCount: req.body.branchesCount || 1,
     employeeCount: req.body.employeeCount || 0,
     contactPerson: req.body.contactPerson || 'HR Admin',
+    contactDesignation: req.body.contactDesignation || 'HR Head',
     phone: req.body.phone || '9876543210',
     email: req.body.email || 'hr@company.com',
     city: req.body.city || 'Chandigarh',
     state: req.body.state || 'Chandigarh',
     industry: req.body.industry || 'Information Technology',
-    industryType: req.body.industryType || 'REGULAR'
+    bankName: req.body.bankName || 'HDFC Bank',
+    bankAccountNo: req.body.bankAccountNo || '',
+    ifscCode: req.body.ifscCode || '',
+    bankBranch: req.body.bankBranch || ''
   };
 
   try {
@@ -223,13 +236,14 @@ app.post('/api/v1/companies', async (req: Request, res: Response) => {
         industry: newCompany.industry
       }
     });
-    dbCompanies.unshift(created as any);
-    return res.json({ success: true, data: created });
+    dbCompanies.unshift({ ...newCompany, ...created } as any);
+    return res.json({ success: true, data: { ...newCompany, ...created } });
   } catch (e) {
     dbCompanies.unshift(newCompany as any);
     return res.json({ success: true, data: newCompany });
   }
 });
+
 
 // Employees API
 app.get('/api/v1/employees', async (req: Request, res: Response) => {

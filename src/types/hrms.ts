@@ -76,16 +76,33 @@ export interface Company {
   id: string;
   name: string;
   code: string;
+  companyType?: string;
+  industry?: string;
+  industryType?: string;
+  cinNumber?: string;
+  gstin?: string;
+  panNumber?: string;
+  tanNumber?: string;
   pfCode: string;
   esiCode: string;
+  lwfCode?: string;
+  ptCode?: string;
+  registeredAddress?: string;
+  pincode?: string;
   branchesCount: number;
   employeeCount: number;
   contactPerson: string;
+  contactDesignation?: string;
   phone: string;
   email: string;
   city: string;
   state: string;
+  bankName?: string;
+  bankAccountNo?: string;
+  ifscCode?: string;
+  bankBranch?: string;
 }
+
 
 export interface AttendanceRecord {
   id: string;
