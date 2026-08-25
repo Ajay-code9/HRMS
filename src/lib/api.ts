@@ -67,6 +67,19 @@ export const api = {
     }
   },
 
+  addBulkEmployees: async (employees: Employee[]) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/employees/bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(employees)
+      });
+      return await res.json();
+    } catch (e) {
+      return null;
+    }
+  },
+
   // Leaves API
   getLeaves: async (): Promise<LeaveRequest[]> => {
     try {

@@ -271,14 +271,44 @@ export default function Home() {
   const [globalParams, setGlobalParams] = useState<GlobalParameter>(DEFAULT_GLOBAL_PARAMS);
   const [hrUser, setHrUser] = useState<UserAccount>(MOCK_HR_USER);
 
-  // Load initial data from Backend API (with fallback to mock)
+  // Helper to persist employees locally as fallback
+  const saveEmployeesToStorage = (list: Employee[]) => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('ss_hrms_employees', JSON.stringify(list));
+      } catch (err) {
+        console.error('Failed to save employees to localStorage', err);
+      }
+    }
+  };
+
+  // Load initial data from Backend API (with fallback to mock & localStorage)
   useEffect(() => {
     api.getCompanies().then(res => {
       if (res && res.length > 0) setCompanies(res);
     });
+
     api.getEmployees().then(res => {
-      if (res && res.length > 0) setEmployees(res);
+      let savedLocal: Employee[] = [];
+      if (typeof window !== 'undefined') {
+        const localData = localStorage.getItem('ss_hrms_employees');
+        if (localData) {
+          try { savedLocal = JSON.parse(localData); } catch (e) {}
+        }
+      }
+
+      if (res && res.length > 0) {
+        const mergedMap = new Map<string, Employee>();
+        res.forEach(e => mergedMap.set(e.id, e));
+        savedLocal.forEach(e => mergedMap.set(e.id, e));
+        const mergedList = Array.from(mergedMap.values());
+        setEmployees(mergedList);
+        saveEmployeesToStorage(mergedList);
+      } else if (savedLocal.length > 0) {
+        setEmployees(savedLocal);
+      }
     });
+
     api.getLeaves().then(res => {
       if (res && res.length > 0) setLeaves(res);
     });
@@ -305,12 +335,30 @@ export default function Home() {
   };
 
   const handleAddEmployee = async (e: Employee) => {
-    setEmployees(prev => [e, ...prev]);
+    setEmployees(prev => {
+      const updated = [e, ...prev];
+      saveEmployeesToStorage(updated);
+      return updated;
+    });
     await api.addEmployee(e);
   };
 
-  const handleUpdateEmployee = (updated: Employee) => setEmployees(employees.map(e => e.id === updated.id ? updated : e));
-  const handleBulkUpload = (emps: Employee[]) => setEmployees([...emps, ...employees]);
+  const handleUpdateEmployee = (updated: Employee) => {
+    setEmployees(prev => {
+      const newList = prev.map(e => e.id === updated.id ? updated : e);
+      saveEmployeesToStorage(newList);
+      return newList;
+    });
+  };
+
+  const handleBulkUpload = async (emps: Employee[]) => {
+    setEmployees(prev => {
+      const updated = [...emps, ...prev];
+      saveEmployeesToStorage(updated);
+      return updated;
+    });
+    await api.addBulkEmployees(emps);
+  };
   const handleUpdateAttendance = (recs: AttendanceRecord[]) => setAttendance(recs);
 
   const handleApplyLeave = async (lv: LeaveRequest) => {

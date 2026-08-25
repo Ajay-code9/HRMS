@@ -342,35 +342,79 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
   };
 
   // ── Bulk import ──────────────────────────────────────────────────────────────
-  const handleExcel = (e:React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file) return;
+  const [isDragging, setIsDragging] = useState(false);
+
+  const processFile = (file: File) => {
+    if (!file) return;
     const reader = new FileReader();
     reader.onload = evt => {
-      const wb = XLSX.read(evt.target?.result, {type:'binary'});
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const data = XLSX.utils.sheet_to_json<Record<string,unknown>>(ws);
-      const emps:Employee[] = data.map((row,i)=>({
-        id:`emp-excel-${Date.now()}-${i}`,
-        empCode:String(row['EmpCode']||`IMP-${i+100}`),
-        name:String(row['Name']||'Employee'),
-        companyId:companies[0]?.id||'', companyName:String(row['Company']||''),
-        department:String(row['Department']||'General'),
-        designation:String(row['Designation']||'Executive'),
-        phone:String(row['Phone']||''), email:String(row['Email']||''),
-        joiningDate:String(row['JoiningDate']||'2026-01-01'),
-        bankName:String(row['BankName']||'SBI'), accountNo:String(row['AccountNo']||''),
-        ifsc:String(row['IFSC']||''), pfNumber:String(row['PFNumber']||''),
-        uanNumber:String(row['UAN']||''), esiNumber:String(row['ESI']||''),
-        panNumber:String(row['PAN']||''),
-        basicSalary:Number(row['Basic']||18000), hra:Number(row['HRA']||7200),
-        conveyance:Number(row['Conveyance']||1600), specialAllowance:Number(row['Special']||2000),
-        status:'Active', loginPassword:`Pass@${i+100}`,
-      }));
-      onBulkUpload(emps);
-      setShowUpload(false);
-      alert(`✅ Imported ${emps.length} records!`);
+      try {
+        const wb = XLSX.read(evt.target?.result, { type: 'binary' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws);
+        if (!data || data.length === 0) {
+          alert('⚠️ The uploaded sheet is empty or invalid.');
+          return;
+        }
+        const emps: Employee[] = data.map((row, i) => ({
+          id: `emp-excel-${Date.now()}-${i}`,
+          empCode: String(row['EmpCode'] || row['empCode'] || row['Code'] || `IMP-${i + 100}`),
+          name: String(row['Name'] || row['name'] || row['Employee Name'] || 'Employee'),
+          companyId: companies[0]?.id || '',
+          companyName: String(row['Company'] || row['company'] || companies[0]?.name || ''),
+          department: String(row['Department'] || row['dept'] || 'General'),
+          designation: String(row['Designation'] || row['desig'] || 'Executive'),
+          phone: String(row['Phone'] || row['Mobile'] || row['phone'] || ''),
+          email: String(row['Email'] || row['email'] || ''),
+          joiningDate: String(row['JoiningDate'] || row['DOJ'] || '2026-01-01'),
+          bankName: String(row['BankName'] || row['Bank'] || 'SBI'),
+          accountNo: String(row['AccountNo'] || row['Account Number'] || ''),
+          ifsc: String(row['IFSC'] || ''),
+          pfNumber: String(row['PFNumber'] || row['PF'] || ''),
+          uanNumber: String(row['UAN'] || ''),
+          esiNumber: String(row['ESI'] || ''),
+          panNumber: String(row['PAN'] || ''),
+          basicSalary: Number(row['Basic'] || row['BasicSalary'] || 18000),
+          hra: Number(row['HRA'] || 7200),
+          conveyance: Number(row['Conveyance'] || 1600),
+          specialAllowance: Number(row['Special'] || row['SpecialAllowance'] || 2000),
+          status: 'Active',
+          loginPassword: `Pass@${i + 100}`,
+        }));
+        onBulkUpload(emps);
+        setShowUpload(false);
+        alert(`✅ Imported ${emps.length} records successfully!`);
+      } catch (err) {
+        console.error('Failed to parse excel file', err);
+        alert('❌ Error reading file. Please ensure it is a valid Excel (.xlsx, .xls) or CSV file.');
+      }
     };
     reader.readAsBinaryString(file);
+  };
+
+  const handleExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processFile(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processFile(file);
   };
 
   const copySlip = () => {
@@ -435,7 +479,7 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
             onBlur={e=>{e.target.style.borderColor='var(--border)';e.target.style.boxShadow='none';}} />
         </div>
         <Sel value={coFilter} onChange={e=>setCoFilter(e.target.value)} style={{...inputSt,width:'auto',minWidth:160}}>
-          <option value="ALL">All Companies ({employees.length})</option>
+          <option value="ALL">All Companies ({companies.length})</option>
           {companies.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
         </Sel>
         <Sel value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} style={{...inputSt,width:'auto',minWidth:120}}>
@@ -1031,12 +1075,30 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
                 <span className="font-mono">EmpCode, Name, Department, Designation, Phone, Email, JoiningDate, BankName, AccountNo, IFSC, PFNumber, UAN, ESI, PAN, Basic, HRA, Conveyance, Special</span>
               </div>
               <label className="block cursor-pointer">
-                <div className="p-8 text-center transition" style={{ border:'2px dashed var(--border)' }}
-                  onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.borderColor='var(--primary)';(e.currentTarget as HTMLElement).style.background='var(--primary-light)';}}
-                  onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.borderColor='var(--border)';(e.currentTarget as HTMLElement).style.background='transparent';}}>
-                  <FileSpreadsheet className="w-8 h-8 mx-auto mb-2" style={{ color:'var(--muted)' }} />
-                  <div className="text-sm font-semibold" style={{ color:'var(--foreground)' }}>Drop Excel / CSV here</div>
-                  <div className="text-xs mt-1" style={{ color:'var(--muted)' }}>.xlsx, .xls, .csv supported</div>
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className="p-8 text-center transition"
+                  style={{
+                    border: `2px dashed ${isDragging ? 'var(--primary)' : 'var(--border)'}`,
+                    background: isDragging ? 'var(--primary-light)' : 'transparent'
+                  }}
+                  onMouseEnter={e=>{
+                    if(!isDragging){
+                      (e.currentTarget as HTMLElement).style.borderColor='var(--primary)';
+                      (e.currentTarget as HTMLElement).style.background='var(--primary-light)';
+                    }
+                  }}
+                  onMouseLeave={e=>{
+                    if(!isDragging){
+                      (e.currentTarget as HTMLElement).style.borderColor='var(--border)';
+                      (e.currentTarget as HTMLElement).style.background='transparent';
+                    }
+                  }}>
+                  <FileSpreadsheet className="w-8 h-8 mx-auto mb-2" style={{ color:'var(--primary)' }} />
+                  <div className="text-sm font-semibold" style={{ color:'var(--foreground)' }}>Click to upload or drag and drop</div>
+                  <div className="text-xs mt-1" style={{ color:'var(--muted)' }}>Excel (.xlsx, .xls) or CSV supported</div>
                 </div>
                 <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcel} />
               </label>
