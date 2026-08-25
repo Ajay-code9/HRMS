@@ -106,7 +106,9 @@ model Company {
   individualSalary   IndividualSalaryStructure[]
   compositeSalary    CompositeSalaryStructure[]
   payFiles           PayFile[]
+  branches           Branch[]
 }
+
 
 model CompanyOffice {
   id               String   @id @default(uuid())
@@ -373,3 +375,281 @@ model CityMaster {
   state   StateMaster @relation(fields: [stateId], references: [id], onDelete: Cascade)
   name    String
 }
+
+// ─── Module 1: Global System Master Management ────────────────────────────────
+model SystemMaster {
+  id           String   @id @default(uuid())
+  category     String   // GEOGRAPHIC, STATUTORY, HR, PAYROLL
+  subCategory  String?  // STATES, CITIES, PF_OFFICES, ESI_OFFICES, DEPARTMENTS, DESIGNATIONS, ATTENDANCE_TYPES, LEAVE_TYPES
+  code         String
+  name         String
+  description  String?
+  metadata     String?  // JSON string for custom properties
+  isActive     Boolean  @default(true)
+  isSoftDeleted Boolean @default(false)
+  createdBy    String   @default("SUPER_ADMIN")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ─── Module 2: Company Branch Management ─────────────────────────────────────
+model Branch {
+  id                String   @id @default(uuid())
+  companyId         String
+  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  branchCode        String
+  branchName        String
+  branchType        String   @default("Regional Office") // Head Office, Regional Office, Branch, Factory, Warehouse
+  address           String
+  state             String
+  city              String
+  pincode           String
+  contactPerson     String
+  phone             String
+  email             String
+  pfOfficeCode      String?
+  esiOfficeCode     String?
+  bankName          String?
+  accountNumber     String?
+  ifscCode          String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// ─── Module 3 & 4: Advanced Salary Components & Reusable Structure Builder ────
+model ConfigurableSalaryComponent {
+  id                String   @id @default(uuid())
+  componentCode     String   @unique
+  componentName     String
+  componentType     String   // EARNING, DEDUCTION, EMPLOYER_CONTRIBUTION
+  calculationMethod String   @default("FIXED") // FIXED, PERCENTAGE, FORMULA
+  percentageBase    String?  // BASIC, GROSS, CTC
+  percentageValue   Float?
+  isTaxable         Boolean  @default(true)
+  isPfApplicable    Boolean  @default(true)
+  isEsiApplicable   Boolean  @default(true)
+  isPtApplicable    Boolean  @default(true)
+  displayOrder      Int      @default(1)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+}
+
+model SalaryStructureTemplate {
+  id           String                      @id @default(uuid())
+  templateName String
+  description  String?
+  targetGrade  String?
+  isActive     Boolean                     @default(true)
+  items        SalaryStructureTemplateItem[]
+  createdAt    DateTime                    @default(now())
+}
+
+model SalaryStructureTemplateItem {
+  id            String                  @id @default(uuid())
+  templateId    String
+  template      SalaryStructureTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  componentCode String
+  value         Float
+  isPercentage  Boolean                 @default(false)
+}
+
+// ─── Module 5: Salary Revision & Arrear Management ───────────────────────────
+model EmployeeSalaryRevision {
+  id             String   @id @default(uuid())
+  workerId       Int
+  previousBasic  Float
+  newBasic       Float
+  previousGross  Float
+  newGross       Float
+  effectiveDate  DateTime
+  revisionReason String
+  status         String   @default("Approved") // Pending, Approved, Rejected
+  processedArrear Float   @default(0.0)
+  createdAt      DateTime @default(now())
+}
+
+model PayrollArrear {
+  id            String   @id @default(uuid())
+  workerId      Int
+  payFileId     String?
+  periodMonth   String
+  arrearAmount  Float
+  reason        String
+  status        String   @default("Pending") // Pending, Processed
+  createdAt     DateTime @default(now())
+}
+
+// ─── Module 6: Employee Advance & Loan Management ────────────────────────────
+model EmployeeAdvance {
+  id               String   @id @default(uuid())
+  workerId         Int
+  companyId        String
+  advanceType      String   @default("Salary Advance")
+  advanceAmount    Float
+  issueDate        DateTime
+  recoveryDate     DateTime
+  recoveryMethod   String   @default("Single Deduction") // Single Deduction, Installments
+  remainingBalance Float
+  status           String   @default("Active") // Active, Fully Recovered, Cancelled
+  remarks          String?
+  createdAt        DateTime @default(now())
+}
+
+// ─── Module 7: Attendance Processing & Period Locking ─────────────────────────
+model AttendancePeriod {
+  id            String   @id @default(uuid())
+  companyId     String
+  monthYear     String
+  status        String   @default("Draft") // Draft, UnderReview, Finalized, Locked
+  lockedBy      String?
+  lockedAt      DateTime?
+  reopenedBy    String?
+  reopenReason  String?
+  createdAt     DateTime @default(now())
+}
+
+model AttendanceCorrectionLog {
+  id           String   @id @default(uuid())
+  workerId     Int
+  date         String
+  previousIn   String?
+  newIn        String?
+  previousOut  String?
+  newOut       String?
+  reason       String
+  correctedBy  String
+  correctedAt  DateTime @default(now())
+}
+
+// ─── Module 8 & 9: Leave Allotment & Transactions ────────────────────────────
+model LeavePolicy {
+  id                String   @id @default(uuid())
+  companyId         String
+  leaveType         String   // Casual, Sick, Earned, Maternity
+  annualQuota       Int      @default(12)
+  carryForwardLimit Int      @default(0)
+  accrualFrequency  String   @default("Annual") // Annual, Monthly
+  isActive          Boolean  @default(true)
+}
+
+model LeaveAllocation {
+  id             String   @id @default(uuid())
+  workerId       Int
+  year           Int
+  leaveType      String
+  allocated      Float
+  used           Float    @default(0.0)
+  remaining      Float
+  openingBalance Float    @default(0.0)
+  updatedAt      DateTime @updatedAt
+}
+
+model LeaveTransaction {
+  id              String   @id @default(uuid())
+  workerId        Int
+  leaveType       String
+  transactionType String   // ALLOCATION, DEBIT_USAGE, CREDIT_ADJUSTMENT, CANCELLATION_REVERSAL
+  amount          Float
+  balanceAfter    Float
+  reason          String
+  createdAt       DateTime @default(now())
+}
+
+// ─── Module 11: Document Management System ────────────────────────────────────
+model Document {
+  id             String   @id @default(uuid())
+  entityType     String   // EMPLOYEE, COMPANY
+  entityId       String
+  category       String   // AADHAAR, PAN, APPOINTMENT_LETTER, GST_REGISTRATION, PF_ESTT_REG, ESI_REG, OTHER
+  fileName       String
+  fileUrl        String
+  fileType       String
+  fileSizeBytes  Int
+  expiryDate     DateTime?
+  uploadedBy     String
+  status         String   @default("Active")
+  createdAt      DateTime @default(now())
+}
+
+// ─── Module 12 & 13: Email & WhatsApp Notification Logs ─────────────────────
+model NotificationLog {
+  id          String   @id @default(uuid())
+  channel     String   // EMAIL, WHATSAPP
+  recipient   String
+  subject     String?
+  template    String
+  status      String   @default("PENDING") // PENDING, SENT, FAILED
+  errorReason String?
+  sentAt      DateTime?
+  createdAt   DateTime @default(now())
+}
+
+// ─── Module 14 & 15: Subscription & 60-Day Trial Management ───────────────────
+model Subscription {
+  id               String   @id @default(uuid())
+  companyId        String   @unique
+  planName         String   @default("Enterprise HRMS 60-Day Trial")
+  startDate        DateTime @default(now())
+  endDate          DateTime
+  isTrial          Boolean  @default(true)
+  status           String   @default("ACTIVE") // ACTIVE, EXPIRED, SUSPENDED, GRACE
+  gracePeriodDays  Int      @default(7)
+  notes            String?
+  updatedAt        DateTime @updatedAt
+}
+
+// ─── Module 16: Backup Logs ───────────────────────────────────────────────────
+model BackupLog {
+  id            String   @id @default(uuid())
+  backupType    String   @default("DATABASE_SNAPSHOT") // DATABASE_SNAPSHOT, DOCUMENT_ZIP
+  fileName      String
+  fileSizeBytes Int      @default(0)
+  status        String   @default("SUCCESS") // SUCCESS, FAILED
+  initiatedBy   String   @default("SYSTEM_SCHEDULE")
+  notes         String?
+  createdAt     DateTime @default(now())
+}
+
+// ─── Module 17: Legacy Data Import Jobs ───────────────────────────────────────
+model ImportJob {
+  id            String   @id @default(uuid())
+  importType    String   // EMPLOYEES, ATTENDANCE, PAYROLL, COMPANIES
+  fileName      String
+  totalRecords  Int
+  successCount  Int
+  failCount     Int
+  status        String   @default("COMPLETED") // PROCESSING, COMPLETED, FAILED
+  errorLogJson  String?
+  importedBy    String
+  createdAt     DateTime @default(now())
+}
+
+// ─── Module 18 & 19: Asset Management & Exit Return ──────────────────────────
+model Asset {
+  id            String            @id @default(uuid())
+  companyId     String
+  assetName     String
+  category      String            // Laptop, Desktop, Mobile, SIM Card, Biometric Device, Equipment
+  serialNumber  String            @unique
+  purchaseDate  String?
+  purchaseValue Float             @default(0.0)
+  condition     String            @default("Good")
+  status        String            @default("AVAILABLE") // AVAILABLE, ASSIGNED, UNDER_REPAIR, DAMAGED, LOST, RETIRED
+  assignments   AssetAssignment[]
+  createdAt     DateTime          @default(now())
+}
+
+model AssetAssignment {
+  id                String    @id @default(uuid())
+  assetId           String
+  asset             Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  workerId          Int
+  assignedDate      DateTime  @default(now())
+  returnDate        DateTime?
+  conditionOnAssign String    @default("Good")
+  conditionOnReturn String?
+  remarks           String?
+  status            String    @default("ASSIGNED") // ASSIGNED, RETURNED
+}
+

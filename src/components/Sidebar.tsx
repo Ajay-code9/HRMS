@@ -24,16 +24,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
       case 'Super Admin': return [
         { id: 'dashboard',  label: 'Dashboard',               icon: Sparkles },
         { id: 'companies',  label: 'Companies & Onboarding',  icon: Building2 },
+        { id: 'branches',   label: 'Company Branches',        icon: Building2 },
         { id: 'employees',  label: 'Employee Master',         icon: Users },
         { id: 'attendance', label: 'Attendance & Biometrics', icon: CalendarCheck },
         { id: 'payroll',    label: 'Payroll Engine',          icon: Calculator },
         { id: 'leaves',     label: 'Leave Management',        icon: Award },
         { id: 'assets',     label: 'Asset Management',        icon: Package },
+        { id: 'documents',  label: 'Document Vault',          icon: FileText },
         { id: 'reports',    label: 'Statutory Reports',       icon: FileText },
         { id: 'import',     label: 'Data Import',             icon: FileSpreadsheet },
         { id: 'masters',    label: 'PF / ESI Parameters',     icon: Settings },
         { id: 'logs',       label: 'Audit Logs',              icon: ShieldAlert },
       ];
+
       case 'Admin': return [
         { id: 'dashboard',  label: 'Dashboard',               icon: Sparkles },
         { id: 'companies',  label: 'Client Companies',        icon: Building2 },

@@ -115,6 +115,107 @@ export const api = {
     } catch (e) {
       return null;
     }
+  },
+
+  // Masters API
+  getMasters: async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/masters`);
+      const data = await res.json();
+      return data.data;
+    } catch (e) { return []; }
+  },
+
+  // Branches API
+  getBranches: async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/branches`);
+      const data = await res.json();
+      return data.data;
+    } catch (e) { return []; }
+  },
+  addBranch: async (branch: any) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/branches`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(branch)
+      });
+      return await res.json();
+    } catch (e) { return null; }
+  },
+
+  // Salary Components API
+  getSalaryComponents: async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/salary-components`);
+      const data = await res.json();
+      return data.data;
+    } catch (e) { return []; }
+  },
+
+  // Salary Revisions API
+  getSalaryRevisions: async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/salary-revisions`);
+      const data = await res.json();
+      return data.data;
+    } catch (e) { return []; }
+  },
+
+  // Advances & Loans API
+  getAdvances: async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/advances`);
+      const data = await res.json();
+      return data.data;
+    } catch (e) { return []; }
+  },
+
+  // Attendance Period API
+  getAttendancePeriods: async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/attendance-periods`);
+      const data = await res.json();
+      return data.data;
+    } catch (e) { return []; }
+  },
+
+  // Documents API
+  getDocuments: async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/documents`);
+      const data = await res.json();
+      return data.data;
+    } catch (e) { return []; }
+  },
+
+  // Subscriptions & Trial API
+  getSubscription: async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/subscription`);
+      const data = await res.json();
+      return data.data;
+    } catch (e) { return null; }
+  },
+
+  // Assets API
+  getAssets: async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/assets`);
+      const data = await res.json();
+      return data.data;
+    } catch (e) { return []; }
+  },
+
+  // Backups API
+  getBackups: async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/backups`);
+      const data = await res.json();
+      return data.data;
+    } catch (e) { return []; }
   }
 };
+
 

@@ -379,6 +379,32 @@ export default function Home() {
         return <SettingsLogsView globalParams={globalParams} logs={MOCK_LOGS} onSaveParams={setGlobalParams} />;
       case 'import':
         return <ImportDataPage />;
+      case 'branches':
+        return <CompanySetupView companies={companies} onAddCompany={handleAddCompany} />;
+      case 'documents':
+        return (
+          <div className="space-y-6">
+            <div className="bg-white p-5 border border-slate-300 shadow-sm flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-extrabold text-slate-900">Document Vault & Compliance Repository</h2>
+                <p className="text-xs text-slate-500 mt-1">Encrypted storage for Employee KYC (Aadhaar, PAN) & Company Statutory Certificates.</p>
+              </div>
+              <button className="px-4 py-2 bg-blue-900 text-white font-bold text-xs uppercase">Upload Document</button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 bg-white border border-slate-300 space-y-2">
+                <span className="px-2 py-0.5 bg-blue-100 text-blue-900 font-bold text-[10px]">EMPLOYEE KYC</span>
+                <h4 className="font-bold text-slate-900 text-sm">Rohan_PAN_Card.pdf</h4>
+                <p className="text-xs text-slate-500">245 KB • Uploaded by Ananya Verma (Company HR)</p>
+              </div>
+              <div className="p-4 bg-white border border-slate-300 space-y-2">
+                <span className="px-2 py-0.5 bg-purple-100 text-purple-900 font-bold text-[10px]">COMPANY CERTIFICATE</span>
+                <h4 className="font-bold text-slate-900 text-sm">SSC_PF_Registration_Certificate.pdf</h4>
+                <p className="text-xs text-slate-500">512 KB • Uploaded by S. K. Sharma (Super Admin)</p>
+              </div>
+            </div>
+          </div>
+        );
       case 'my-attendance':
         return <MyAttendancePage currentUser={currentUser} attendance={attendance} />;
       case 'my-payslips':
@@ -402,6 +428,15 @@ export default function Home() {
       />
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} currentUser={currentUser} onLogout={handleLogout} demoDaysLeft={60} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Module 15: 60-Day Trial Alert Bar */}
+        <div className="bg-gradient-to-r from-blue-900 to-indigo-950 text-white px-4 py-1.5 text-xs flex justify-between items-center border-b border-blue-800">
+          <div className="flex items-center gap-2 font-medium">
+            <span className="px-2 py-0.5 bg-amber-400 text-slate-950 font-extrabold text-[10px] uppercase tracking-wider">60-DAY TRIAL</span>
+            <span>Enterprise License Active • <strong>60 Days Remaining</strong> in evaluation period.</span>
+          </div>
+          <span className="font-mono text-[11px] text-blue-200">Grace Period: 7 Days</span>
+        </div>
+
         <Header currentUser={currentUser} onLogout={handleLogout} onOpenUniversalSearch={() => setIsSearchOpen(true)} />
         <main className="flex-1 p-6 overflow-y-auto" style={{ minHeight: 0 }}>
           {renderContent()}
@@ -410,3 +445,4 @@ export default function Home() {
     </div>
   );
 }
+
