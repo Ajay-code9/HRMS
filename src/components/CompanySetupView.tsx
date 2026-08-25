@@ -2,20 +2,26 @@
 
 import React, { useState } from 'react';
 import { Building2, Plus, MapPin, Phone, Mail, Layers, CreditCard, Landmark, BookOpen, ShieldCheck, FileText, CheckCircle2, User } from 'lucide-react';
-import { Company } from '@/types/hrms';
+import { Company, Employee } from '@/types/hrms';
 import { INDIAN_STATES, INDIAN_CITIES } from '@/data/indianMastersData';
 
 interface CompanySetupProps {
   companies: Company[];
+  employees?: Employee[];
   onAddCompany: (company: Company) => void;
 }
 
-export const CompanySetupView: React.FC<CompanySetupProps> = ({ companies, onAddCompany }) => {
+export const CompanySetupView: React.FC<CompanySetupProps> = ({ companies, employees = [], onAddCompany }) => {
   const [activeTab, setActiveTab] = useState<'basic' | 'depts' | 'deductions' | 'loans'>('basic');
   const [showModal, setShowModal] = useState(false);
   const [modalSection, setModalSection] = useState<'basic' | 'statutory' | 'address' | 'contact' | 'bank'>('basic');
   const [useCustomCity, setUseCustomCity] = useState(false);
   const [customCityName, setCustomCityName] = useState('');
+
+  // Selected Company Details Modal State
+  const [selectedCompanyDetail, setSelectedCompanyDetail] = useState<Company | null>(null);
+  const [detailModalTab, setDetailModalTab] = useState<'overview' | 'employees' | 'branches'>('overview');
+
 
   // Sub-module State (Departments, Designations, Deductions, Loans/Advances)
   const [departments] = useState(['Operations', 'Legal Compliance', 'Payroll & HR', 'Manufacturing', 'Finance']);
@@ -170,73 +176,86 @@ export const CompanySetupView: React.FC<CompanySetupProps> = ({ companies, onAdd
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {companies.map((c) => (
-              <div key={c.id} className="bg-white p-5 border border-slate-300 shadow-sm flex flex-col justify-between space-y-4 hover:border-blue-900 transition">
-                <div>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className="px-2 py-0.5 bg-blue-100 text-blue-950 text-[10px] font-mono font-bold uppercase border border-blue-200">
-                        {c.code}
-                      </span>
-                      <h3 className="text-base font-bold text-slate-900 mt-2 leading-snug">{c.name}</h3>
-                      {c.companyType && <p className="text-[11px] text-slate-500 font-medium mt-0.5">{c.companyType}</p>}
-                    </div>
-                    <div className="w-8 h-8 bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-700 font-bold text-xs">
-                      {c.branchesCount} B
-                    </div>
-                  </div>
+            {companies.map((c) => {
+              const compEmployees = employees.filter(emp => emp.companyId === c.id || emp.companyName === c.name);
+              const totalEmployeesCount = compEmployees.length > 0 ? compEmployees.length : c.employeeCount;
 
-                  <div className="mt-4 space-y-2 text-xs">
-                    <div className="p-3 bg-slate-50 border border-slate-200 space-y-1.5">
-                      <div className="flex justify-between font-mono text-[11px]">
-                        <span className="text-slate-600">PF Estt Code:</span>
-                        <span className="text-blue-950 font-bold">{c.pfCode}</span>
+              return (
+                <div
+                  key={c.id}
+                  onClick={() => setSelectedCompanyDetail(c)}
+                  className="bg-white p-5 border border-slate-300 shadow-sm flex flex-col justify-between space-y-4 hover:border-blue-900 hover:shadow-md transition cursor-pointer group"
+                >
+                  <div>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="px-2 py-0.5 bg-blue-100 text-blue-950 text-[10px] font-mono font-bold uppercase border border-blue-200">
+                          {c.code}
+                        </span>
+                        <h3 className="text-base font-bold text-slate-900 mt-2 leading-snug group-hover:text-blue-900 transition">{c.name}</h3>
+                        {c.companyType && <p className="text-[11px] text-slate-500 font-medium mt-0.5">{c.companyType}</p>}
                       </div>
-                      <div className="flex justify-between font-mono text-[11px]">
-                        <span className="text-slate-600">ESI Code No:</span>
-                        <span className="text-blue-900 font-bold">{c.esiCode}</span>
+                      <div className="w-8 h-8 bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-700 font-bold text-xs">
+                        {c.branchesCount} B
                       </div>
-                      {c.gstin && (
-                        <div className="flex justify-between font-mono text-[11px]">
-                          <span className="text-slate-600">GSTIN:</span>
-                          <span className="text-slate-900 font-bold">{c.gstin}</span>
-                        </div>
-                      )}
-                      {c.panNumber && (
-                        <div className="flex justify-between font-mono text-[11px]">
-                          <span className="text-slate-600">Company PAN:</span>
-                          <span className="text-slate-900 font-bold">{c.panNumber}</span>
-                        </div>
-                      )}
                     </div>
 
-                    <div className="pt-2 text-slate-700 space-y-1">
-                      <p className="flex items-center gap-2 text-[11px]">
-                        <MapPin className="w-3.5 h-3.5 text-blue-900 shrink-0" /> {c.registeredAddress ? `${c.registeredAddress}, ` : ''}{c.city}, {c.state} {c.pincode || ''}
-                      </p>
-                      <p className="flex items-center gap-2 text-[11px]">
-                        <Phone className="w-3.5 h-3.5 text-blue-900 shrink-0" /> {c.phone} ({c.contactPerson} {c.contactDesignation ? `- ${c.contactDesignation}` : ''})
-                      </p>
-                      <p className="flex items-center gap-2 text-[11px]">
-                        <Mail className="w-3.5 h-3.5 text-blue-900 shrink-0" /> {c.email}
-                      </p>
-                      {c.bankName && (
-                        <p className="flex items-center gap-2 text-[11px] font-mono text-slate-800 pt-1">
-                          <Landmark className="w-3.5 h-3.5 text-blue-900 shrink-0" /> {c.bankName} (A/C: {c.bankAccountNo || 'N/A'})
+                    <div className="mt-4 space-y-2 text-xs">
+                      <div className="p-3 bg-slate-50 border border-slate-200 space-y-1.5">
+                        <div className="flex justify-between font-mono text-[11px]">
+                          <span className="text-slate-600">PF Estt Code:</span>
+                          <span className="text-blue-950 font-bold">{c.pfCode}</span>
+                        </div>
+                        <div className="flex justify-between font-mono text-[11px]">
+                          <span className="text-slate-600">ESI Code No:</span>
+                          <span className="text-blue-900 font-bold">{c.esiCode}</span>
+                        </div>
+                        {c.gstin && (
+                          <div className="flex justify-between font-mono text-[11px]">
+                            <span className="text-slate-600">GSTIN:</span>
+                            <span className="text-slate-900 font-bold">{c.gstin}</span>
+                          </div>
+                        )}
+                        {c.panNumber && (
+                          <div className="flex justify-between font-mono text-[11px]">
+                            <span className="text-slate-600">Company PAN:</span>
+                            <span className="text-slate-900 font-bold">{c.panNumber}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="pt-2 text-slate-700 space-y-1">
+                        <p className="flex items-center gap-2 text-[11px]">
+                          <MapPin className="w-3.5 h-3.5 text-blue-900 shrink-0" /> {c.registeredAddress ? `${c.registeredAddress}, ` : ''}{c.city}, {c.state} {c.pincode || ''}
                         </p>
-                      )}
+                        <p className="flex items-center gap-2 text-[11px]">
+                          <Phone className="w-3.5 h-3.5 text-blue-900 shrink-0" /> {c.phone} ({c.contactPerson} {c.contactDesignation ? `- ${c.contactDesignation}` : ''})
+                        </p>
+                        <p className="flex items-center gap-2 text-[11px]">
+                          <Mail className="w-3.5 h-3.5 text-blue-900 shrink-0" /> {c.email}
+                        </p>
+                        {c.bankName && (
+                          <p className="flex items-center gap-2 text-[11px] font-mono text-slate-800 pt-1">
+                            <Landmark className="w-3.5 h-3.5 text-blue-900 shrink-0" /> {c.bankName} (A/C: {c.bankAccountNo || 'N/A'})
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-xs font-semibold">
-                  <span className="text-slate-600">Active Workforce:</span>
-                  <span className="font-bold text-slate-900 bg-slate-100 border border-slate-300 px-2.5 py-1 text-xs">
-                    {c.employeeCount} Employees
-                  </span>
+                  <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-xs font-semibold">
+                    <div className="flex items-center gap-1.5 text-blue-900 group-hover:underline">
+                      <span>View Full Profile & Workforce</span>
+                      <span>→</span>
+                    </div>
+                    <span className="font-bold text-slate-900 bg-blue-50 text-blue-950 border border-blue-200 px-2.5 py-1 text-xs">
+                      {totalEmployeesCount} Employees
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
+
           </div>
         </div>
       )}
@@ -780,6 +799,286 @@ export const CompanySetupView: React.FC<CompanySetupProps> = ({ companies, onAdd
           </div>
         </div>
       )}
+      {/* Modal: Company Details & Enrolled Workforce Ledger */}
+      {selectedCompanyDetail && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white border border-slate-300 shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-slate-900 text-white p-5 flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 bg-blue-500 text-white text-xs font-mono font-extrabold uppercase">
+                    {selectedCompanyDetail.code}
+                  </span>
+                  <span className="px-2 py-0.5 bg-slate-800 text-slate-300 text-[11px] font-medium">
+                    {selectedCompanyDetail.companyType || 'Corporate Client'}
+                  </span>
+                </div>
+                <h3 className="text-xl font-extrabold text-white mt-1.5 leading-snug">{selectedCompanyDetail.name}</h3>
+                <p className="text-xs text-slate-300 mt-0.5 flex items-center gap-3">
+                  <span>📍 {selectedCompanyDetail.city}, {selectedCompanyDetail.state}</span>
+                  <span>•</span>
+                  <span>🏢 {selectedCompanyDetail.branchesCount} Office Branches</span>
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedCompanyDetail(null)}
+                className="w-8 h-8 bg-slate-800 hover:bg-red-600 text-white font-bold flex items-center justify-center transition cursor-pointer text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Tabs */}
+            <div className="bg-slate-100 border-b border-slate-300 flex px-5 gap-2 text-xs font-bold pt-2">
+              <button
+                onClick={() => setDetailModalTab('overview')}
+                className={`px-4 py-2.5 border-b-2 transition ${
+                  detailModalTab === 'overview'
+                    ? 'border-blue-900 text-blue-950 bg-white'
+                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                📋 Legal, Statutory & Bank Profile
+              </button>
+              <button
+                onClick={() => setDetailModalTab('employees')}
+                className={`px-4 py-2.5 border-b-2 transition flex items-center gap-1.5 ${
+                  detailModalTab === 'employees'
+                    ? 'border-blue-900 text-blue-950 bg-white'
+                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <User className="w-3.5 h-3.5" /> Enrolled Workforce & Employees (
+                {employees.filter(e => e.companyId === selectedCompanyDetail.id || e.companyName === selectedCompanyDetail.name).length || selectedCompanyDetail.employeeCount}
+                )
+              </button>
+              <button
+                onClick={() => setDetailModalTab('branches')}
+                className={`px-4 py-2.5 border-b-2 transition ${
+                  detailModalTab === 'branches'
+                    ? 'border-blue-900 text-blue-950 bg-white'
+                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                🏢 Company Offices & Branches ({selectedCompanyDetail.branchesCount})
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
+              {detailModalTab === 'overview' && (
+                <div className="space-y-6">
+                  {/* Grid 1: Statutory Numbers */}
+                  <div>
+                    <h4 className="font-extrabold text-slate-900 text-sm border-b border-slate-200 pb-2 mb-3 flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-blue-900" /> Labor Law Statutory & Tax Registrations
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="p-3 bg-slate-50 border border-slate-200">
+                        <span className="text-[10px] text-slate-500 font-bold block uppercase">EPF Establishment Code</span>
+                        <span className="font-mono font-bold text-slate-900 text-sm">{selectedCompanyDetail.pfCode || 'N/A'}</span>
+                      </div>
+                      <div className="p-3 bg-slate-50 border border-slate-200">
+                        <span className="text-[10px] text-slate-500 font-bold block uppercase">ESIC 17-Digit Code</span>
+                        <span className="font-mono font-bold text-slate-900 text-sm">{selectedCompanyDetail.esiCode || 'N/A'}</span>
+                      </div>
+                      <div className="p-3 bg-slate-50 border border-slate-200">
+                        <span className="text-[10px] text-slate-500 font-bold block uppercase">15-Digit GSTIN</span>
+                        <span className="font-mono font-bold text-slate-900 text-sm">{selectedCompanyDetail.gstin || 'N/A'}</span>
+                      </div>
+                      <div className="p-3 bg-slate-50 border border-slate-200">
+                        <span className="text-[10px] text-slate-500 font-bold block uppercase">Company PAN Number</span>
+                        <span className="font-mono font-bold text-slate-900 text-sm">{selectedCompanyDetail.panNumber || 'N/A'}</span>
+                      </div>
+                      <div className="p-3 bg-slate-50 border border-slate-200">
+                        <span className="text-[10px] text-slate-500 font-bold block uppercase">TAN (TDS Deduction)</span>
+                        <span className="font-mono font-bold text-slate-900 text-sm">{selectedCompanyDetail.tanNumber || 'N/A'}</span>
+                      </div>
+                      <div className="p-3 bg-slate-50 border border-slate-200">
+                        <span className="text-[10px] text-slate-500 font-bold block uppercase">Corporate CIN / LLPIN</span>
+                        <span className="font-mono font-bold text-slate-900 text-sm">{selectedCompanyDetail.cinNumber || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Grid 2: Address & HR Contact */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-extrabold text-slate-900 text-sm border-b border-slate-200 pb-2 mb-3 flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-blue-900" /> Registered Street Address & Location
+                      </h4>
+                      <div className="p-4 bg-slate-50 border border-slate-200 space-y-2">
+                        <p className="font-semibold text-slate-900">{selectedCompanyDetail.registeredAddress || 'Registered Office Address'}</p>
+                        <p className="text-slate-600">{selectedCompanyDetail.city}, {selectedCompanyDetail.state} - {selectedCompanyDetail.pincode || 'Pincode N/A'}</p>
+                        <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-900 font-bold text-[10px]">
+                          State Jurisdiction: {selectedCompanyDetail.state}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-extrabold text-slate-900 text-sm border-b border-slate-200 pb-2 mb-3 flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-blue-900" /> Authorised HR Contact & Signatory
+                      </h4>
+                      <div className="p-4 bg-slate-50 border border-slate-200 space-y-2">
+                        <p className="font-bold text-slate-900 text-sm">{selectedCompanyDetail.contactPerson}</p>
+                        <p className="text-slate-600 font-medium">{selectedCompanyDetail.contactDesignation || 'HR Manager / Authorised Signatory'}</p>
+                        <div className="pt-2 border-t border-slate-200 space-y-1 font-mono text-[11px]">
+                          <p className="text-slate-800">📞 Phone: {selectedCompanyDetail.phone}</p>
+                          <p className="text-slate-800">✉️ Email: {selectedCompanyDetail.email}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Grid 3: Corporate Banking */}
+                  <div>
+                    <h4 className="font-extrabold text-slate-900 text-sm border-b border-slate-200 pb-2 mb-3 flex items-center gap-2">
+                      <Landmark className="w-4 h-4 text-blue-900" /> Corporate Salary Disbursal Banking
+                    </h4>
+                    <div className="p-4 bg-blue-50/50 border border-blue-200 grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div>
+                        <span className="text-[10px] text-slate-500 font-bold block uppercase">Disbursal Bank</span>
+                        <span className="font-bold text-slate-900">{selectedCompanyDetail.bankName || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 font-bold block uppercase">Corporate Account No</span>
+                        <span className="font-mono font-bold text-slate-900">{selectedCompanyDetail.bankAccountNo || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 font-bold block uppercase">Bank IFSC Code</span>
+                        <span className="font-mono font-bold text-slate-900">{selectedCompanyDetail.ifscCode || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 font-bold block uppercase">Branch Name</span>
+                        <span className="font-medium text-slate-900">{selectedCompanyDetail.bankBranch || 'Main Branch'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {detailModalTab === 'employees' && (
+                <div className="space-y-4">
+                  {(() => {
+                    const compEmployees = employees.filter(e => e.companyId === selectedCompanyDetail.id || e.companyName === selectedCompanyDetail.name);
+                    
+                    if (compEmployees.length === 0) {
+                      return (
+                        <div className="p-8 text-center bg-slate-50 border border-dashed border-slate-300 space-y-2">
+                          <User className="w-8 h-8 text-slate-400 mx-auto" />
+                          <h4 className="font-bold text-slate-900">No Employees Enrolled Yet</h4>
+                          <p className="text-xs text-slate-500 max-w-md mx-auto">
+                            There are currently no active employee records assigned to {selectedCompanyDetail.name}. You can onboard new workers directly from the Employee Master tab.
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center bg-slate-50 p-3 border border-slate-200">
+                          <span className="font-bold text-slate-900">Enrolled Staff Workforce ({compEmployees.length} Members)</span>
+                          <span className="font-mono text-xs font-bold text-blue-900">
+                            Total CTC Payroll: ₹{compEmployees.reduce((acc, curr) => acc + (curr.basicSalary || 0) + (curr.hra || 0) + (curr.specialAllowance || 0), 0).toLocaleString('en-IN')}/mo
+                          </span>
+                        </div>
+
+                        <div className="overflow-x-auto border border-slate-300">
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="bg-slate-900 text-white font-bold text-[11px]">
+                                <th className="p-3">Emp Code</th>
+                                <th className="p-3">Employee Name</th>
+                                <th className="p-3">Department</th>
+                                <th className="p-3">Designation</th>
+                                <th className="p-3">Joining Date</th>
+                                <th className="p-3">Mobile Phone</th>
+                                <th className="p-3">Basic Salary</th>
+                                <th className="p-3">Gross CTC</th>
+                                <th className="p-3">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-200 bg-white">
+                              {compEmployees.map(emp => {
+                                const gross = (emp.basicSalary || 0) + (emp.hra || 0) + (emp.conveyance || 0) + (emp.specialAllowance || 0);
+                                return (
+                                  <tr key={emp.id} className="hover:bg-blue-50/50 transition">
+                                    <td className="p-3 font-mono font-bold text-blue-950">{emp.empCode}</td>
+                                    <td className="p-3 font-bold text-slate-900">{emp.name}</td>
+                                    <td className="p-3 text-slate-700">{emp.department}</td>
+                                    <td className="p-3 text-slate-700">{emp.designation}</td>
+                                    <td className="p-3 font-mono text-slate-600">{emp.joiningDate}</td>
+                                    <td className="p-3 font-mono text-slate-600">{emp.phone}</td>
+                                    <td className="p-3 font-mono font-bold text-slate-900">₹{(emp.basicSalary || 0).toLocaleString('en-IN')}</td>
+                                    <td className="p-3 font-mono font-bold text-blue-900">₹{gross.toLocaleString('en-IN')}</td>
+                                    <td className="p-3">
+                                      <span className="px-2 py-0.5 bg-emerald-100 text-emerald-900 font-bold text-[10px]">Active</span>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {detailModalTab === 'branches' && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-slate-50 border border-slate-200 flex justify-between items-center">
+                    <div>
+                      <h4 className="font-bold text-slate-900">Configured Office Locations</h4>
+                      <p className="text-slate-500 text-xs mt-0.5">Head office, manufacturing plants, and regional branches mapped to this corporate entity.</p>
+                    </div>
+                    <span className="px-3 py-1 bg-blue-900 text-white font-bold text-xs">{selectedCompanyDetail.branchesCount} Total Branches</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-white border border-slate-300 space-y-2">
+                      <div className="flex justify-between items-start">
+                        <span className="px-2 py-0.5 bg-blue-100 text-blue-900 font-bold text-[10px] uppercase">HEAD OFFICE</span>
+                        <span className="font-mono text-xs text-slate-500">Code: {selectedCompanyDetail.code}-HO</span>
+                      </div>
+                      <h5 className="font-bold text-slate-900">{selectedCompanyDetail.name} (Corporate HQ)</h5>
+                      <p className="text-slate-600 text-xs">{selectedCompanyDetail.registeredAddress || 'Sector 17 Industrial Area'}, {selectedCompanyDetail.city}, {selectedCompanyDetail.state}</p>
+                      <p className="text-slate-500 text-[11px] pt-1">Contact: {selectedCompanyDetail.contactPerson} ({selectedCompanyDetail.phone})</p>
+                    </div>
+
+                    {selectedCompanyDetail.branchesCount > 1 && (
+                      <div className="p-4 bg-white border border-slate-300 space-y-2">
+                        <div className="flex justify-between items-start">
+                          <span className="px-2 py-0.5 bg-purple-100 text-purple-900 font-bold text-[10px] uppercase">PLANT / BRANCH OFFICE</span>
+                          <span className="font-mono text-xs text-slate-500">Code: {selectedCompanyDetail.code}-BR2</span>
+                        </div>
+                        <h5 className="font-bold text-slate-900">{selectedCompanyDetail.name} (Regional Unit)</h5>
+                        <p className="text-slate-600 text-xs">Focal Point Industrial Area, {selectedCompanyDetail.city}</p>
+                        <p className="text-slate-500 text-[11px] pt-1">Contact: Branch Manager ({selectedCompanyDetail.phone})</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-slate-100 p-4 border-t border-slate-300 flex justify-between items-center">
+              <span className="text-slate-500 text-xs">Viewing Full Statutory Profile & Workforce Ledger</span>
+              <button
+                onClick={() => setSelectedCompanyDetail(null)}
+                className="px-5 py-2 bg-slate-900 text-white font-bold text-xs uppercase hover:bg-slate-800 transition"
+              >
+                Close View
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+

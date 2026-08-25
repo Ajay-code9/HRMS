@@ -344,7 +344,7 @@ export default function Home() {
         return <DashboardView companies={companies} employees={employees} attendance={attendance} payroll={payroll} onNavigate={setActiveTab} currentUser={currentUser} />;
       case 'companies':
       case 'company':
-        return <CompanySetupView companies={companies} onAddCompany={handleAddCompany} />;
+        return <CompanySetupView companies={companies} employees={employees} onAddCompany={handleAddCompany} />;
       case 'employees':
         return (
           <EmployeeView
