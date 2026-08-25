@@ -42,8 +42,65 @@ let dbCompanies = [
     email: 'owner@apextech.com',
     city: 'Ludhiana',
     state: 'Punjab'
+  },
+  {
+    id: 'comp-3',
+    name: 'Mahindra Heavy Engineering Pvt Ltd',
+    code: 'MHE003',
+    pfCode: 'MH/45678/MHE',
+    esiCode: '31009876543210987',
+    branchesCount: 4,
+    employeeCount: 250,
+    contactPerson: 'Anish Shah',
+    phone: '9820011223',
+    email: 'hr@mahindrahe.com',
+    city: 'Pune',
+    state: 'Maharashtra'
+  },
+  {
+    id: 'comp-4',
+    name: 'Larsen & Toubro Infra Ltd',
+    code: 'LTI004',
+    pfCode: 'TN/12987/LTI',
+    esiCode: '51001239876543210',
+    branchesCount: 8,
+    employeeCount: 540,
+    contactPerson: 'Subrahmanyan Raman',
+    phone: '9840033445',
+    email: 'payroll@ltinfra.com',
+    city: 'Chennai',
+    state: 'Tamil Nadu'
+  },
+  {
+    id: 'comp-5',
+    name: 'Tata Consumer Logistics Ltd',
+    code: 'TCL005',
+    pfCode: 'WB/88776/TCL',
+    esiCode: '41005544332211009',
+    branchesCount: 6,
+    employeeCount: 310,
+    contactPerson: 'Sunil D’Souza',
+    phone: '9830055667',
+    email: 'hr@tataconsumer.com',
+    city: 'Kolkata',
+    state: 'West Bengal'
+  },
+  {
+    id: 'comp-6',
+    name: 'Infosys Business Solutions Ltd',
+    code: 'IBS006',
+    pfCode: 'KA/33445/IBS',
+    esiCode: '53006677889900112',
+    branchesCount: 12,
+    employeeCount: 1250,
+    contactPerson: 'Salil Parekh',
+    phone: '9880077889',
+    email: 'corporate.hr@infosysbs.com',
+    city: 'Bengaluru',
+    state: 'Karnataka'
   }
 ];
+
 
 let dbEmployees = [
   {
