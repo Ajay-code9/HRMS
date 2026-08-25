@@ -21,6 +21,7 @@ import {
   Company, Employee, AttendanceRecord, LeaveRequest,
   GlobalParameter, AuditLog, PayrollRecord, AssetRecord
 } from '@/types/hrms';
+import { api } from '@/lib/api';
 
 // ─── Mock Seed Data ───────────────────────────────────────────────────────────
 const MOCK_COMPANIES: Company[] = [
@@ -270,6 +271,19 @@ export default function Home() {
   const [globalParams, setGlobalParams] = useState<GlobalParameter>(DEFAULT_GLOBAL_PARAMS);
   const [hrUser, setHrUser] = useState<UserAccount>(MOCK_HR_USER);
 
+  // Load initial data from Backend API (with fallback to mock)
+  useEffect(() => {
+    api.getCompanies().then(res => {
+      if (res && res.length > 0) setCompanies(res);
+    });
+    api.getEmployees().then(res => {
+      if (res && res.length > 0) setEmployees(res);
+    });
+    api.getLeaves().then(res => {
+      if (res && res.length > 0) setLeaves(res);
+    });
+  }, []);
+
   // Global Ctrl+K listener
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -284,18 +298,39 @@ export default function Home() {
 
   const handleLogin = (user: UserAccount) => { setCurrentUser(user); setActiveTab('dashboard'); };
   const handleLogout = () => { setCurrentUser(null); };
-  const handleAddCompany = (c: Company) => setCompanies([c, ...companies]);
-  const handleAddEmployee = (e: Employee) => setEmployees([e, ...employees]);
+
+  const handleAddCompany = async (c: Company) => {
+    setCompanies(prev => [c, ...prev]);
+    await api.addCompany(c);
+  };
+
+  const handleAddEmployee = async (e: Employee) => {
+    setEmployees(prev => [e, ...prev]);
+    await api.addEmployee(e);
+  };
+
   const handleUpdateEmployee = (updated: Employee) => setEmployees(employees.map(e => e.id === updated.id ? updated : e));
   const handleBulkUpload = (emps: Employee[]) => setEmployees([...emps, ...employees]);
   const handleUpdateAttendance = (recs: AttendanceRecord[]) => setAttendance(recs);
-  const handleApplyLeave = (lv: LeaveRequest) => setLeaves([lv, ...leaves]);
-  const handleApproveLeave = (id: string, by: string, rem: string) =>
-    setLeaves(leaves.map(l => l.id === id ? { ...l, status: 'Approved', approvedBy: by, approvedAt: new Date().toLocaleString(), approvalRemarks: rem } : l));
-  const handleRejectLeave = (id: string, by: string, rem: string) =>
-    setLeaves(leaves.map(l => l.id === id ? { ...l, status: 'Rejected', approvedBy: by, approvedAt: new Date().toLocaleString(), approvalRemarks: rem } : l));
+
+  const handleApplyLeave = async (lv: LeaveRequest) => {
+    setLeaves(prev => [lv, ...prev]);
+    await api.addLeaveRequest(lv);
+  };
+
+  const handleApproveLeave = async (id: string, by: string, rem: string) => {
+    setLeaves(prev => prev.map(l => l.id === id ? { ...l, status: 'Approved', approvedBy: by, approvedAt: new Date().toLocaleString(), approvalRemarks: rem } : l));
+    await api.approveLeave(id, by, rem);
+  };
+
+  const handleRejectLeave = async (id: string, by: string, rem: string) => {
+    setLeaves(prev => prev.map(l => l.id === id ? { ...l, status: 'Rejected', approvedBy: by, approvedAt: new Date().toLocaleString(), approvalRemarks: rem } : l));
+    await api.rejectLeave(id, by, rem);
+  };
+
   const handleUpdatePermissions = (perms: HRPermissions) =>
     setHrUser(prev => ({ ...prev, hrPermissions: perms }));
+
 
   if (!currentUser) return <LoginView onLoginSuccess={handleLogin} />;
 

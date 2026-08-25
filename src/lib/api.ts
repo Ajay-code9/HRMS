@@ -89,5 +89,32 @@ export const api = {
     } catch (e) {
       return null;
     }
+  },
+
+  rejectLeave: async (id: string, approverName: string, remarks: string) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/leaves/${id}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approverName, remarks })
+      });
+      return await res.json();
+    } catch (e) {
+      return null;
+    }
+  },
+
+  addLeaveRequest: async (leave: LeaveRequest) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/leaves`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(leave)
+      });
+      return await res.json();
+    } catch (e) {
+      return null;
+    }
   }
 };
+
