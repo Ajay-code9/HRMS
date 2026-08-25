@@ -80,6 +80,19 @@ export const api = {
     }
   },
 
+  updateEmployee: async (employee: Employee) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/employees/${employee.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(employee)
+      });
+      return await res.json();
+    } catch (e) {
+      return null;
+    }
+  },
+
   // Leaves API
   getLeaves: async (): Promise<LeaveRequest[]> => {
     try {

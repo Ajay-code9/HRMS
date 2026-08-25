@@ -155,8 +155,9 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
 
   // Edit drawer
   const [editEmp, setEditEmp] = useState<Employee|null>(null);
-  const [editTab, setEditTab] = useState<'personal'|'address'|'family'|'kyc'|'bank'|'salary'>('personal');
+  const [editTab, setEditTab] = useState<'personal'|'address'|'family'|'kyc'|'bank'|'salary'|'status'>('personal');
   const [editDraft, setEditDraft] = useState<Partial<Employee>>({});
+  const [viewingExitEmp, setViewingExitEmp] = useState<Employee|null>(null);
 
   // Bank history per employee: empId → BankAccount[]
   const [bankHistories, setBankHistories] = useState<Record<string, BankAccount[]>>({});
@@ -252,6 +253,13 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
     const changes = Object.entries(editDraft);
     if (changes.length === 0) { setEditEmp(null); return; }
 
+    const nowStr = new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+    const isExitChanged = editDraft.status === 'Inactive' || editDraft.exitDate || editDraft.exitReason || editDraft.exitNote;
+    const auditFields: Partial<Employee> = isExitChanged ? {
+      exitRecordedBy: editDraft.exitRecordedBy || `${currentUser.name} (${currentUser.role})`,
+      exitRecordedAt: editEmp.exitRecordedAt || nowStr,
+    } : {};
+
     if (!isAdmin && !isOwner) {
       // Non-admin: raise change requests for each changed field
       const newCRs: ChangeRequest[] = changes.map(([field, newVal]) => ({
@@ -268,12 +276,13 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
       alert(`✅ ${newCRs.length} change request(s) submitted. Awaiting admin approval.`);
     } else {
       // Admin: apply immediately
-      onUpdateEmployee({ ...editEmp, ...editDraft });
+      onUpdateEmployee({ ...editEmp, ...editDraft, ...auditFields });
       setEditEmp(null); setEditDraft({});
     }
   };
 
   const getSectionForField = (f:string): string => {
+    if (['status','exitDate','exitReason','exitNote'].includes(f)) return 'Status & Exit';
     if (['name','dateOfBirth','gender','fatherName','motherName'].includes(f)) return 'Personal';
     if (['addressPresent','cityPresent','statePresent'].includes(f)) return 'Address';
     if (['nomineeName','nomineeRelation'].includes(f)) return 'Family';
@@ -620,9 +629,17 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
 
                     {/* Status */}
                     <td style={{ textAlign:'center' }}>
-                      <span className={`text-[11px] font-bold px-2 py-0.5 ${emp.status==='Active'?'badge-green':'badge-slate'}`}>
+                      <span className={`text-[11px] font-bold px-2 py-0.5 ${emp.status==='Active'?'badge-green':'badge-red'}`}>
                         {emp.status}
                       </span>
+                      {emp.status === 'Inactive' && (
+                        <button
+                          onClick={() => setViewingExitEmp(emp)}
+                          className="mt-1 text-[10px] font-bold text-red-700 hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto"
+                          title="Click to view exit details & notes">
+                          <AlertCircle className="w-3 h-3 text-red-600 inline" /> Exit Info
+                        </button>
+                      )}
                     </td>
 
                     {/* Edit */}
@@ -746,13 +763,13 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
 
             {/* Tab Nav */}
             <div className="flex overflow-x-auto shrink-0" style={{ borderBottom:'1px solid var(--border)', background:'#F7F8FA' }}>
-              {(['personal','address','family','kyc','bank','salary'] as const).map(t=>(
+              {(['personal','address','family','kyc','bank','salary','status'] as const).map(t=>(
                 <button key={t} onClick={()=>setEditTab(t)}
                   className="px-4 py-3 text-xs font-bold uppercase tracking-wider cursor-pointer whitespace-nowrap transition"
                   style={editTab===t
                     ? { color:'var(--primary)', borderBottom:'2px solid var(--primary)', background:'#fff' }
                     : { color:'var(--muted)' }}>
-                  {t}
+                  {t === 'status' ? 'Status & Exit' : t}
                 </button>
               ))}
             </div>
@@ -982,6 +999,71 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
                       </Fld>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Status & Exit */}
+              {editTab==='status' && (
+                <div className="space-y-5">
+                  <div className="p-4" style={{ background:'#F7F8FA', border:'1px solid var(--border)' }}>
+                    <Fld label="Employment Status" req>
+                      <Sel
+                        value={String(editDraft['status'] ?? editEmp.status)}
+                        onChange={e => setDraft('status', e.target.value as 'Active' | 'Inactive')}
+                        style={{ ...inputSt, fontWeight: 700, color: (editDraft['status'] ?? editEmp.status) === 'Active' ? '#16A34A' : '#DC2626' }}>
+                        <option value="Active">🟢 Active (Currently Employed)</option>
+                        <option value="Inactive">🔴 Inactive (Left Company / Resigned / Terminated)</option>
+                      </Sel>
+                    </Fld>
+                  </div>
+
+                  {((editDraft['status'] ?? editEmp.status) === 'Inactive' || editDraft.exitDate || editEmp.exitDate) && (
+                    <div className="space-y-4 p-4" style={{ background:'#FEF2F2', border:'1px solid #FCA5A5' }}>
+                      <div className="text-xs font-bold uppercase tracking-wider text-red-900 border-b border-red-200 pb-2 flex items-center gap-1.5">
+                        <AlertCircle className="w-4 h-4 text-red-600" /> Exit & Separation Details
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Fld label="Exit / Leaving Date">
+                          <Inp
+                            type="date"
+                            value={String(editDraft['exitDate'] ?? editEmp.exitDate ?? '')}
+                            onChange={e => setDraft('exitDate', e.target.value)}
+                          />
+                        </Fld>
+                        <Fld label="Reason for Leaving">
+                          <Sel
+                            value={String(editDraft['exitReason'] ?? editEmp.exitReason ?? '')}
+                            onChange={e => setDraft('exitReason', e.target.value)}>
+                            <option value="">Select Exit Reason...</option>
+                            <option value="Resigned (Personal/Career)">Resigned (Personal/Career)</option>
+                            <option value="Terminated">Terminated</option>
+                            <option value="Retired">Retired</option>
+                            <option value="Contract Completed">Contract Completed</option>
+                            <option value="Medical / Health Reasons">Medical / Health Reasons</option>
+                            <option value="Absconded">Absconded / Left without notice</option>
+                            <option value="Other">Other</option>
+                          </Sel>
+                        </Fld>
+                      </div>
+                      <Fld label="Exit Note / Remarks">
+                        <textarea
+                          rows={3}
+                          value={String(editDraft['exitNote'] ?? editEmp.exitNote ?? '')}
+                          onChange={e => setDraft('exitNote', e.target.value)}
+                          placeholder="Enter exit details, handover notes, notice period comments..."
+                          className="w-full text-xs p-3 focus:outline-none"
+                          style={{ border:'1px solid var(--border)', background:'#fff', color:'var(--foreground)' }}
+                        />
+                      </Fld>
+                      {(editEmp.exitRecordedBy || editEmp.exitRecordedAt) && (
+                        <div className="p-3 text-xs bg-white border border-red-200 text-slate-700 space-y-1">
+                          <div className="font-bold text-red-900">📝 Recorded Audit Trail:</div>
+                          {editEmp.exitRecordedBy && <div>Recorded By: <strong>{editEmp.exitRecordedBy}</strong></div>}
+                          {editEmp.exitRecordedAt && <div>Recorded At: <span className="font-mono">{editEmp.exitRecordedAt}</span></div>}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1300,6 +1382,82 @@ export const EmployeeView: React.FC<EmployeeViewProps> = ({
                   <CheckCircle2 className="w-4 h-4" /> Register Employee
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ── View Exit Details Modal ─────────────────────────────────────────── */}
+      {viewingExitEmp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:'rgba(0,0,0,0.5)' }}>
+          <div className="bg-white w-full max-w-md shadow-2xl overflow-hidden" style={{ border:'1px solid var(--border)' }}>
+            <div className="p-4 flex items-center justify-between" style={{ background:'#DC2626', color:'#fff' }}>
+              <div className="font-bold flex items-center gap-2 text-sm">
+                <AlertCircle className="w-5 h-5" /> Exit Details — {viewingExitEmp.name}
+              </div>
+              <button onClick={()=>setViewingExitEmp(null)} className="cursor-pointer text-white opacity-80 hover:opacity-100">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4 text-xs">
+              <div className="p-3 bg-red-50 border border-red-200 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-semibold">Employee Code:</span>
+                  <span className="font-mono font-bold text-slate-900">{viewingExitEmp.empCode}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-semibold">Designation & Dept:</span>
+                  <span className="font-bold text-slate-900">{viewingExitEmp.designation} ({viewingExitEmp.department})</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-semibold">Company:</span>
+                  <span className="font-bold text-slate-900">{viewingExitEmp.companyName}</span>
+                </div>
+              </div>
+
+              <div className="space-y-2 p-3 bg-slate-50 border border-slate-200">
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-semibold">Exit / Leaving Date:</span>
+                  <span className="font-mono font-bold text-red-700">{viewingExitEmp.exitDate || 'Not specified'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-semibold">Reason for Leaving:</span>
+                  <span className="font-bold text-slate-900">{viewingExitEmp.exitReason || 'Not specified'}</span>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Exit Remarks / Notes:</label>
+                <div className="p-3 bg-amber-50 border border-amber-200 text-slate-800 rounded font-mono text-xs whitespace-pre-wrap">
+                  {viewingExitEmp.exitNote || 'No exit remarks entered.'}
+                </div>
+              </div>
+
+              <div className="p-3 bg-slate-100 border border-slate-200 text-slate-600 space-y-1 text-[11px]">
+                <div>Recorded By: <strong className="text-slate-900">{viewingExitEmp.exitRecordedBy || 'System / Admin'}</strong></div>
+                <div>Recorded On: <span className="font-mono">{viewingExitEmp.exitRecordedAt || '—'}</span></div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  onClick={() => setViewingExitEmp(null)}
+                  className="px-4 py-2 text-xs font-semibold cursor-pointer"
+                  style={{ border:'1px solid var(--border)', color:'var(--foreground)' }}>
+                  Close
+                </button>
+                {(isAdmin || isOwner) && (
+                  <button
+                    onClick={() => {
+                      const target = viewingExitEmp;
+                      setViewingExitEmp(null);
+                      setEditEmp(target);
+                      setEditTab('status');
+                    }}
+                    className="px-4 py-2 text-xs font-bold text-white cursor-pointer"
+                    style={{ background:'var(--primary)' }}>
+                    ✏️ Edit Exit Note
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

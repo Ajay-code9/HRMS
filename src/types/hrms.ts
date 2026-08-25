@@ -69,6 +69,11 @@ export interface Employee {
   salaryStructureType?: 'Individual' | 'Composite';
 
   status: 'Active' | 'Inactive';
+  exitDate?: string;
+  exitReason?: string;
+  exitNote?: string;
+  exitRecordedBy?: string;
+  exitRecordedAt?: string;
   loginPassword?: string;
 }
 

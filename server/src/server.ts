@@ -374,6 +374,16 @@ app.post('/api/v1/employees', async (req: Request, res: Response) => {
   return res.json({ success: true, data: newEmp });
 });
 
+app.put('/api/v1/employees/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const index = dbEmployees.findIndex(e => e.id === id);
+  if (index !== -1) {
+    dbEmployees[index] = { ...dbEmployees[index], ...req.body };
+    return res.json({ success: true, data: dbEmployees[index] });
+  }
+  return res.status(404).json({ success: false, message: 'Employee not found' });
+});
+
 app.post('/api/v1/employees/bulk', async (req: Request, res: Response) => {
   const newEmps = Array.isArray(req.body) ? req.body : (req.body.employees || []);
   if (newEmps.length === 0) {

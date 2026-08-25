@@ -343,12 +343,13 @@ export default function Home() {
     await api.addEmployee(e);
   };
 
-  const handleUpdateEmployee = (updated: Employee) => {
+  const handleUpdateEmployee = async (updated: Employee) => {
     setEmployees(prev => {
       const newList = prev.map(e => e.id === updated.id ? updated : e);
       saveEmployeesToStorage(newList);
       return newList;
     });
+    await api.updateEmployee(updated);
   };
 
   const handleBulkUpload = async (emps: Employee[]) => {
