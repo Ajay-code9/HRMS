@@ -118,7 +118,25 @@ export interface AttendanceRecord {
   outTime: string;
   status: 'Present' | 'Absent' | 'Half Day' | 'Leave';
   overtimeHours: number;
-  source: 'Manual' | 'Excel' | 'Biometric';
+  source: 'Manual' | 'Excel' | 'Biometric' | 'Web Punch';
+  remarks?: string;
+  rectifiedBy?: string;
+}
+
+export interface AttendanceRegularizationRequest {
+  id: string;
+  empId: string;
+  empName: string;
+  date: string;
+  requestedInTime: string;
+  requestedOutTime: string;
+  requestedStatus: 'Present' | 'Half Day' | 'Leave';
+  reason: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  requestedAt: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewRemarks?: string;
 }
 
 export interface PayrollRecord {

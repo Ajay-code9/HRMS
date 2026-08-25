@@ -407,7 +407,8 @@ export default function Home() {
           />
         );
       case 'attendance':
-        return <AttendanceView attendance={attendance} employees={employees} onUpdateAttendance={handleUpdateAttendance} />;
+      case 'my-attendance':
+        return <AttendanceView attendance={attendance} employees={employees} onUpdateAttendance={handleUpdateAttendance} currentUser={currentUser} />;
       case 'payroll':
         return <PayrollView employees={employees} attendance={attendance} globalParams={globalParams} />;
       case 'leaves':
