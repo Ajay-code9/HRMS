@@ -116,8 +116,8 @@ h1, h2, h3, h4, h5, h6 {
 .badge-amber  { background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; }
 .badge-slate  { background:#F1F3F5; color:#475569; border:1px solid #CBD5E1; }
 
-/* ─── Sharp edges (client preference) ──────────────────────────────────────── */
-* { border-radius: 0px !important; }
+/* ─── Modern Border Radius System ─────────────────────────────────────────── */
+/* Smooth rounded corners for modern UI elements                               */
 
 /* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar        { width: 5px; height: 5px; }
