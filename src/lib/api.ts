@@ -134,7 +134,7 @@ export const api = {
       return data.data;
     } catch (e) { return []; }
   },
-  addBranch: async (branch: any) => {
+  addBranch: async (branch: Record<string, unknown>) => {
     try {
       const res = await fetch(`${API_BASE_URL}/branches`, {
         method: 'POST',
